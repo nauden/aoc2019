@@ -40,9 +40,7 @@ defmodule Day02 do
   def part2() do
     ins = input()
 
-    for verb <- 0..99, noun <- 0..99 do
-      {verb, noun}
-    end
+    for(verb <- 0..99, noun <- 0..99, do: {verb, noun})
     |> Enum.find(fn {verb, noun} ->
       run(ins: ins, verb: verb, noun: noun) == 19_690_720
     end)
