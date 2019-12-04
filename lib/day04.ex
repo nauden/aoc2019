@@ -1,4 +1,24 @@
 defmodule Day04 do
+  @doc """
+  iex> Day04.valid?(111111)
+  true
+
+  iex> Day04.valid?(223450)
+  false
+
+  iex> Day04.valid?(123789)
+  false
+
+  iex> Day04.valid2?(112233)
+  true
+
+  iex> Day04.valid2?(123444)
+  false
+
+  iex> Day04.valid2?(112233)
+  true
+  """
+
   def valid?(num) do
     ds = Integer.digits(num)
     acending?(ds) and has_repeat?(ds)

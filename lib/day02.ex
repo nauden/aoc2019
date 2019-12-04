@@ -1,4 +1,11 @@
 defmodule Day02 do
+  @doc """
+  iex> Day02.run(ip: 0, ins: {1,9,10,3,2,3,11,0,99,30,40,50})
+  3500
+
+  iex> Day02.run(ip: 0, ins: {1,1,1,4,99,5,6,0,99})
+  30
+  """
   def run([ip: ip, ins: ins] = cpu) when elem(ins, ip) == 1 do
     run(ip: ip + 4, ins: put_elem(ins, p(cpu), a(cpu) + b(cpu)))
   end
