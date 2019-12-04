@@ -18,13 +18,13 @@ defmodule Day02 do
     elem(ins, 0)
   end
 
-  def run(ins: ins, verb: verb, noun: noun) do
+  def run(ins: ins, noun: noun, verb: verb) do
     run(
       ip: 0,
       ins:
         ins
-        |> put_elem(1, verb)
-        |> put_elem(2, noun)
+        |> put_elem(1, noun)
+        |> put_elem(2, verb)
     )
   end
 
@@ -41,16 +41,16 @@ defmodule Day02 do
   end
 
   def part1() do
-    run(ins: input(), verb: 12, noun: 2)
+    run(ins: input(), noun: 12, verb: 2)
   end
 
   def part2() do
     ins = input()
 
-    for(verb <- 0..99, noun <- 0..99, do: {verb, noun})
-    |> Enum.find(fn {verb, noun} ->
-      run(ins: ins, verb: verb, noun: noun) == 19_690_720
+    for(noun <- 0..99, verb <- 0..99, do: {noun, verb})
+    |> Enum.find(fn {noun, verb} ->
+      run(ins: ins, noun: noun, verb: verb) == 19_690_720
     end)
-    |> (fn {v, n} -> 100 * v + n end).()
+    |> (fn {n, v} -> 100 * n + v end).()
   end
 end
