@@ -34,12 +34,9 @@ defmodule Day04 do
     |> Enum.all?(fn {a, b} -> a <= b end)
   end
 
-  def has_repeat?(ds) do
-    for d <- ds, reduce: %{} do
-      m -> update_in(m[d], &if(&1 == nil, do: 1, else: &1 + 1))
-    end
-    |> Map.values()
-    |> Enum.any?(&(&1 >= 2))
+  def has_repeat?([_ | tail] = ds) do
+    Enum.zip(ds, tail)
+    |> Enum.any?(fn {a, b} -> a == b end)
   end
 
   def has_exactly_two?(ds) do
