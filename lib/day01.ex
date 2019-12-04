@@ -1,6 +1,16 @@
 defmodule Day01 do
   import Enum, only: [map: 2, sum: 1]
 
+  @doc """
+    iex> Day01.fuel(14)
+    2
+    iex> Day01.fuel(12)
+    2
+    iex> Day01.fuel(1969)
+    654
+    iex> Day01.fuel(100756)
+    33583
+  """
   def fuel(mass), do: div(mass, 3) - 2
 
   def input() do
