@@ -7,7 +7,6 @@ defmodule Day05 do
 
   def part1() do
     input()
-    |> IO.inspect()
     |> Intcode.run(1)
   end
 
