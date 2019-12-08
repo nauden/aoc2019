@@ -84,7 +84,12 @@ defmodule Intcode do
     |> step()
   end
 
-  def run(cpu), do: step(cpu)
+  def run(cpu) when is_map(cpu), do: step(cpu)
+
+  def run(ins, input) when is_tuple(ins) do
+    %{ip: 0, ins: ins, input: [input], output: 0}
+    |> run()
+  end
 
   def step(%{ip: ip, ins: ins} = cpu) do
     {opcode, modes} = decode(elem(ins, ip))
