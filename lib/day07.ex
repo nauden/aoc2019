@@ -17,7 +17,7 @@ defmodule Day07 do
 
   def feedback_loop(ins, phase) do
     phase
-    |> Enum.map(&%{ip: 0, ins: ins, pause: true, output: 0, input: [&1]})
+    |> Enum.map(&%{ip: 0, ins: ins, pause: true, base: 0, output: [], input: [&1]})
     |> List.update_at(0, &update_in(&1, [:input], fn v -> v ++ [0] end))
     |> Stream.unfold(&run_feedback_loop/1)
     |> Enum.to_list()
@@ -27,12 +27,14 @@ defmodule Day07 do
   def run_feedback_loop([cpu | rest]) do
     case Intcode.run(cpu) do
       {:paused, paused_cpu} ->
-        {paused_cpu.output,
+        output = List.last(paused_cpu.output)
+
+        {output,
          List.update_at(
            rest,
            0,
            &update_in(&1, [:input], fn v ->
-             v ++ [paused_cpu.output]
+             v ++ [output]
            end)
          ) ++ [paused_cpu]}
 
@@ -41,13 +43,17 @@ defmodule Day07 do
     end
   end
 
+  # |> get_in([:output])
+  # |> List.last()
   def run_amplifiers(ins, phase) do
     phase
-    |> Enum.map(&%{ip: 0, ins: ins, output: 0, input: [&1]})
+    |> Enum.map(&%{ip: 0, ins: ins, base: 0, output: [], input: [&1]})
     |> Enum.reduce(0, fn cpu, acc ->
       cpu
       |> Map.update!(:input, &(&1 ++ [acc]))
       |> Intcode.run()
+      |> get_in([:output])
+      |> List.last()
     end)
   end
 
