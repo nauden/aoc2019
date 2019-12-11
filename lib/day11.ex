@@ -41,8 +41,7 @@ defmodule Day11 do
       for x <- 0..w do
         case panel[{x, y}] do
           @white -> "#"
-          @black -> " "
-          nil -> " "
+          _ -> " "
         end
       end
     end
