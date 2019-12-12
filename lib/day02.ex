@@ -12,7 +12,7 @@ defmodule Day02 do
   def part1() do
     input()
     |> set_values(12, 2)
-    |> Intcode.run(1)
+    |> Intcode.run_sync()
     |> (&:array.get(0, &1.ins)).()
   end
 
@@ -23,7 +23,7 @@ defmodule Day02 do
     |> Enum.find(fn {noun, verb} ->
       ins
       |> set_values(noun, verb)
-      |> Intcode.run(1)
+      |> Intcode.run_sync()
       |> (&:array.get(0, &1.ins)).() == 19_690_720
     end)
     |> (fn {n, v} -> 100 * n + v end).()

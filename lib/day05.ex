@@ -6,16 +6,33 @@ defmodule Day05 do
   end
 
   def part1() do
-    input()
-    |> Intcode.run(1)
-    |> get_in([:output])
-    |> List.last()
+    task =
+      input()
+      |> Intcode.run_async(self())
+
+    send(task.pid, 1)
+    Task.await(task)
+
+    collect()
+  end
+
+  def collect() do
+    receive do
+      {:output, 0} -> collect()
+      {:output, n} -> n
+      _ -> collect()
+    after
+      100 -> IO.puts("timeout")
+    end
   end
 
   def part2() do
-    input()
-    |> Intcode.run(5)
-    |> get_in([:output])
-    |> List.last()
+    task =
+      input()
+      |> Intcode.run_async(self())
+
+    send(task.pid, 5)
+    Task.await(task)
+    collect()
   end
 end

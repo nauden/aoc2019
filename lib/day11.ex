@@ -50,14 +50,7 @@ defmodule Day11 do
 
   def robot(ins) do
     %{
-      cpu: %{
-        ins: ins,
-        ip: 0,
-        base: 0,
-        pause: true,
-        input: [],
-        output: []
-      },
+      task: Intcode.run_async(ins, self()),
       x: 0,
       y: 0,
       facing: @up,
@@ -80,25 +73,24 @@ defmodule Day11 do
     put_in(robot.panel[{x, y}], color)
   end
 
-  def run(%{x: x, y: y} = robot) do
-    current_color = Map.get(robot.panel, {x, y}, @black)
-    robot = put_in(robot.cpu.input, [current_color])
+  def run(%{x: x, y: y, task: task} = robot) do
+    if Process.alive?(task.pid) do
+      current_color = Map.get(robot.panel, {x, y}, @black)
+      send(task.pid, current_color)
 
-    case Intcode.step(robot.cpu) do
-      {:paused, %{output: [color, turn]} = paused_cpu} ->
-        put_in(robot.cpu, paused_cpu)
-        |> paint(color)
-        |> turn(turn)
-        |> move_forward()
-        |> put_in([:cpu, :output], [])
-        |> run()
-
-      {:paused, paused_cpu} ->
-        put_in(robot.cpu, paused_cpu)
-        |> run()
-
-      _ ->
-        robot
+      receive do
+        {:output, color} ->
+          receive do
+            {:output, turn} ->
+              robot
+              |> paint(color)
+              |> turn(turn)
+              |> move_forward()
+              |> run()
+          end
+      end
+    else
+      robot
     end
   end
 end

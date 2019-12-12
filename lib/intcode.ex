@@ -14,7 +14,19 @@ defmodule Intcode do
   @immediate 1
   @relative 2
 
-  def decode(opcode) do
+  def run_async(ins, caller) do
+    Task.async(fn ->
+      %{ip: 0, ins: ins, base: 0, caller: caller}
+      |> step()
+    end)
+  end
+
+  def run_sync(ins) do
+    %{ip: 0, ins: ins, base: 0}
+    |> step()
+  end
+
+  defp decode(opcode) do
     {
       rem(opcode, 100),
       opcode
@@ -25,17 +37,17 @@ defmodule Intcode do
     }
   end
 
-  def pad(l, n) when length(l) >= n, do: l
-  def pad(l, n), do: pad(l ++ [0], n)
+  defp pad(l, n) when length(l) >= n, do: l
+  defp pad(l, n), do: pad(l ++ [0], n)
 
-  def fetch(modes, cpu, n) do
+  defp fetch(modes, cpu, n) do
     modes
     |> Enum.with_index(1)
     |> Enum.take(n)
     |> Enum.map(fn {mode, i} -> get(mode, cpu, i) end)
   end
 
-  def get(mode, %{ip: ip, ins: ins, base: base}, n) do
+  defp get(mode, %{ip: ip, ins: ins, base: base}, n) do
     case mode do
       @position -> :array.get(:array.get(ip + n, ins), ins)
       @immediate -> :array.get(ip + n, ins)
@@ -43,7 +55,7 @@ defmodule Intcode do
     end
   end
 
-  def idx(mode, %{ip: ip, ins: ins, base: base}, n) do
+  defp idx(mode, %{ip: ip, ins: ins, base: base}, n) do
     case mode do
       @position -> :array.get(ip + n, ins)
       @immediate -> raise "cannot get immediate index"
@@ -51,7 +63,7 @@ defmodule Intcode do
     end
   end
 
-  def binary_op(modes, %{ip: ip, ins: ins} = cpu, op) do
+  defp binary_op(modes, %{ip: ip, ins: ins} = cpu, op) do
     [a, b] = fetch(modes, cpu, 2)
     p = idx(List.last(modes), cpu, 3)
 
@@ -59,33 +71,38 @@ defmodule Intcode do
     |> step()
   end
 
-  def input(modes, %{ip: ip, ins: ins, input: [h | t]} = cpu) do
-    p = idx(hd(modes), cpu, 1)
+  defp input(modes, %{ip: ip, ins: ins} = cpu) do
+    receive do
+      n when is_integer(n) ->
+        p = idx(hd(modes), cpu, 1)
 
-    %{cpu | :ip => ip + 2, :ins => :array.set(p, h, ins), input: t}
+        %{cpu | :ip => ip + 2, :ins => :array.set(p, n, ins)}
+
+      _ ->
+        raise("Bad input received")
+    end
     |> step()
   end
 
-  def output(modes, %{ip: ip, output: os} = cpu) do
-    a = fetch(modes, cpu, 1)
+  defp output(modes, %{ip: ip, caller: caller} = cpu) do
+    [a] = fetch(modes, cpu, 1)
 
-    cpu = %{cpu | :ip => ip + 2, :output => os ++ a}
+    send(caller, {:output, a})
 
-    if Map.has_key?(cpu, :pause) do
-      {:paused, cpu}
-    else
-      step(cpu)
-    end
+    %{cpu | :ip => ip + 2}
+    |> step()
   end
 
-  def jmp_op(modes, cpu, cmp) do
+  defp output(_), do: raise("no pid to send messages to")
+
+  defp jmp_op(modes, cpu, cmp) do
     [a, b] = fetch(modes, cpu, 2)
 
     %{cpu | :ip => if(cmp.(a, 0), do: b, else: cpu.ip + 3)}
     |> step()
   end
 
-  def set_if_op(modes, %{ip: ip, ins: ins} = cpu, cmp) do
+  defp set_if_op(modes, %{ip: ip, ins: ins} = cpu, cmp) do
     [a, b] = fetch(modes, cpu, 2)
     p = idx(List.last(modes), cpu, 3)
 
@@ -95,21 +112,14 @@ defmodule Intcode do
     |> step()
   end
 
-  def adjust(modes, %{ip: ip, base: base} = cpu) do
+  defp adjust(modes, %{ip: ip, base: base} = cpu) do
     [a] = fetch(modes, cpu, 1)
 
     %{cpu | :ip => ip + 2, :base => base + a}
     |> step()
   end
 
-  def run(cpu) when is_map(cpu), do: step(cpu)
-
-  def run(ins, input) do
-    %{ip: 0, ins: ins, base: 0, input: [input], output: []}
-    |> run()
-  end
-
-  def step(%{ip: ip, ins: ins} = cpu) do
+  defp step(%{ip: ip, ins: ins} = cpu) do
     {opcode, modes} = decode(:array.get(ip, ins))
 
     case opcode do
